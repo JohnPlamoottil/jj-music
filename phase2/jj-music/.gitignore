@@ -1,0 +1,35 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# builds
+client/dist/
+server/dist/
+*.tsbuildinfo
+
+# environment / secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# uploaded music must never enter git
+server/uploads/
+uploads/
+*.mp3
+*.m4a
+*.aac
+*.wav
+*.flac
+
+# logs & os
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# editors
+.vscode/*
+!.vscode/extensions.json
+.idea/

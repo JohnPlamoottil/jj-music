@@ -1,0 +1,140 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Safe areas are read once here and reused everywhere, so the player bar
+       and bottom nav can never sit under the iPhone home indicator. */
+    --sa-top: env(safe-area-inset-top, 0px);
+    --sa-bottom: env(safe-area-inset-bottom, 0px);
+    --sa-left: env(safe-area-inset-left, 0px);
+    --sa-right: env(safe-area-inset-right, 0px);
+    --bottom-nav-h: 62px;
+    --mini-player-h: 64px;
+    --player-bottom: calc(var(--bottom-nav-h) + var(--sa-bottom));
+    /* Horizontal page gutter, never narrower than the safe area. */
+    --gutter: 1rem;
+    --page-x: max(var(--gutter), var(--sa-left));
+    color-scheme: dark;
+  }
+
+  @media (min-width: 640px) {
+    :root {
+      --gutter: 1.5rem;
+    }
+  }
+
+  /* On desktop there is no tab bar and the player sits on the floor. */
+  @media (min-width: 1024px) {
+    :root {
+      --bottom-nav-h: 0px;
+      --mini-player-h: 88px;
+      --player-bottom: 0px;
+      --gutter: 2.5rem;
+    }
+  }
+
+  /* Used via an inline animation, so Tailwind never sees a class to emit. */
+  @keyframes bar {
+    0%,
+    100% {
+      transform: scaleY(0.35);
+    }
+    50% {
+      transform: scaleY(1);
+    }
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-ink text-chalk font-sans antialiased;
+    /* iOS: stop rubber-band scroll from detaching the fixed player bar */
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+    letter-spacing: -0.02em;
+  }
+
+  /* Times, counts and durations line up in columns */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-glow ring-offset-2 ring-offset-ink rounded-md;
+  }
+
+  button:disabled {
+    @apply opacity-40 cursor-not-allowed;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-line rounded-full;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer components {
+  .pad-safe-bottom {
+    padding-bottom: calc(var(--sa-bottom));
+  }
+  .pad-safe-top {
+    padding-top: calc(var(--sa-top));
+  }
+
+  /* Every tappable control clears 44px on touch screens */
+  .tap {
+    @apply inline-flex items-center justify-center;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .surface {
+    @apply bg-panel border border-line;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 h-11
+           font-medium transition-colors duration-200 ease-soft;
+  }
+  .btn-primary {
+    @apply btn bg-glow text-ink hover:bg-[#f6b558] active:bg-ember;
+  }
+  .btn-quiet {
+    @apply btn border border-line text-chalk hover:bg-raised active:bg-line;
+  }
+
+  .row-hover {
+    @apply transition-colors duration-150 ease-soft hover:bg-raised/70;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
