@@ -20,10 +20,18 @@ import uploadRoutes from './routes/upload';
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: config.CLIENT_URL,
+  origin(origin, callback) {
+    if (!origin || config.CLIENT_URLS.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error(`Origin ${origin} not allowed by CORS`));
+  },
   credentials: true,
 }));
 app.use(cookieParser());
@@ -35,10 +43,11 @@ app.use(session({
   secret: config.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+  proxy: true,
   cookie: {
     httpOnly: true,
     secure: config.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: config.NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge: config.SESSION_TTL_DAYS * 24 * 60 * 60 * 1000,
   },
 }));
