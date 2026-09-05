@@ -20,7 +20,10 @@ router.post('/login', async (req: AuthRequest, res: Response, next) => {
     }
 
     req.session.userId = user._id.toString();
-    res.json({ data: user.toJSON() });
+    req.session.save((err) => {
+      if (err) return res.status(500).json({ error: 'Session save failed' });
+      res.json({ data: user.toJSON() });
+    });
   } catch (err: any) {
     next(err);
   }
@@ -50,7 +53,10 @@ router.post('/register', async (req: AuthRequest, res: Response, next) => {
 
     await user.save();
     req.session.userId = user._id.toString();
-    res.status(201).json({ data: user.toJSON() });
+    req.session.save((err) => {
+      if (err) return res.status(500).json({ error: 'Session save failed' });
+      res.status(201).json({ data: user.toJSON() });
+    });
   } catch (err: any) {
     next(err);
   }
