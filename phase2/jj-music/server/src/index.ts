@@ -6,6 +6,7 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import session from 'express-session';
 import path from 'path';
+import fs from 'fs';
 import { config } from './config';
 import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './routes/auth';
@@ -63,20 +64,42 @@ app.use('/api/playlists', playlistRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api', statsRoutes);
 
-// Serve static files from public folder (frontend)
-app.use(express.static(path.join(__dirname, '../public')));
+// Serve static files - check multiple possible locations
+const publicPaths = [
+  path.join(__dirname, '../public'),
+  path.join(__dirname, '../../public'),
+  path.join(process.cwd(), 'public'),
+  path.join(process.cwd(), '../public'),
+];
 
-// SPA fallback - serve index.html for all non-API routes
+let foundPublicPath = '';
+for (const publicPath of publicPaths) {
+  if (fs.existsSync(publicPath)) {
+    foundPublicPath = publicPath;
+    console.log(`✓ Found public folder at: ${publicPath}`);
+    break;
+  }
+}
+
+if (foundPublicPath) {
+  app.use(express.static(foundPublicPath));
+}
+
+// SPA fallback
 app.get('*', (req, res) => {
-  const indexPath = path.join(__dirname, '../public/index.html');
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      res.status(404).json({ error: 'Not found' });
+  if (foundPublicPath) {
+    const indexPath = path.join(foundPublicPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(404).json({ error: 'index.html not found' });
     }
-  });
+  } else {
+    res.status(404).json({ error: 'public folder not found' });
+  }
 });
 
-// Error handling (for API errors)
+// Error handling
 app.use(errorHandler);
 
 // MongoDB connection
