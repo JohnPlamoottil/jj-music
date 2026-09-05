@@ -8,7 +8,6 @@ import path from 'path';
 import { config } from '../config';
 
 const router = Router();
-const router = Router();
 
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -201,7 +200,6 @@ router.post('/:id/favorite', authMiddleware, async (req: AuthRequest, res: Respo
 });
 
 export default router;
-
 // Stream audio file with range support
 router.get('/:id/stream', authMiddleware, async (req: AuthRequest, res: Response, next) => {
   try {
@@ -210,7 +208,7 @@ router.get('/:id/stream', authMiddleware, async (req: AuthRequest, res: Response
       return res.status(404).json({ error: 'Song not found' });
     }
 
-    const filePath = path.join(config.LOCAL_UPLOAD_DIR, song.sourcePath);
+    const filePath = path.join(config.LOCAL_UPLOAD_DIR, song.storageKey);
     
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: 'Audio file not found' });
@@ -245,4 +243,3 @@ router.get('/:id/stream', authMiddleware, async (req: AuthRequest, res: Response
   }
 });
 
-export default router;
