@@ -49,7 +49,7 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-// Routes
+// API Routes
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
@@ -66,13 +66,18 @@ app.use('/api', statsRoutes);
 // Serve static files from public folder (frontend)
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Error handling
-app.use(errorHandler);
-
 // SPA fallback - serve index.html for all non-API routes
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+  const indexPath = path.join(__dirname, '../public/index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      res.status(404).json({ error: 'Not found' });
+    }
+  });
 });
+
+// Error handling (for API errors)
+app.use(errorHandler);
 
 // MongoDB connection
 async function start() {
