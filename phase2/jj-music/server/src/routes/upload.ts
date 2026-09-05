@@ -30,8 +30,9 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   fileFilter: (req: any, file: any, cb: any) => {
-    const allowed = ['audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/aac', 'audio/x-m4a'];
-    if (!allowed.includes(file.mimetype)) {
+    const audioTypes = ['audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/aac', 'audio/x-m4a'];
+    const imageTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!audioTypes.includes(file.mimetype) && !imageTypes.includes(file.mimetype)) {
       cb(new Error('Invalid file type'));
       return;
     }
@@ -42,25 +43,32 @@ const upload = multer({
 
 const uploadHandler: RequestHandler = async (req: any, res: Response, next: NextFunction) => {
   try {
-    if (!req.file) {
-      throw new AppError(400, 'No file provided');
+    if (!req.files || !req.files.file || req.files.file.length === 0) {
+      throw new AppError(400, 'No audio file provided');
     }
 
+    const audioFile = req.files.file[0];
+    const artworkFile = req.files.artwork ? req.files.artwork[0] : null;
     const metadata = req.body.metadata ? JSON.parse(req.body.metadata) : {};
+
+    let artworkUrl = metadata.artworkUrl || null;
+    if (artworkFile) {
+      artworkUrl = `/api/songs/artwork/${artworkFile.filename}`;
+    }
 
     const song = new Song({
       userId: (req as AuthRequest).userId,
-      title: metadata.title || req.file.originalname.replace(/\.[^.]+$/, ''),
+      title: metadata.title || audioFile.originalname.replace(/\.[^.]+$/, ''),
       artist: metadata.artist || 'Unknown Artist',
       album: metadata.album || 'Uploaded Library',
       genre: metadata.genre,
       year: metadata.year,
       trackNumber: metadata.trackNumber,
       duration: metadata.duration || 0,
-      artworkUrl: metadata.artworkUrl || null,
-      mimeType: req.file.mimetype,
-      fileSize: req.file.size,
-      storageKey: req.file.filename,
+      artworkUrl: artworkUrl,
+      mimeType: audioFile.mimetype,
+      fileSize: audioFile.size,
+      storageKey: audioFile.filename,
     });
 
     await song.save();
@@ -89,6 +97,6 @@ const uploadHandler: RequestHandler = async (req: any, res: Response, next: Next
   }
 };
 
-router.post('/', authMiddleware, upload.single('file'), uploadHandler);
+router.post('/', authMiddleware, upload.fields([{ name: 'file' }, { name: 'artwork' }]), uploadHandler);
 
 export default router;
