@@ -128,7 +128,7 @@ export function uploadSong(
 
   const xhr = new XMLHttpRequest();
   const promise = new Promise<Song>((resolve, reject) => {
-    xhr.open('POST', '/api/songs/upload');
+    xhr.open('POST', '/api/upload');
     xhr.withCredentials = true;
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100));
