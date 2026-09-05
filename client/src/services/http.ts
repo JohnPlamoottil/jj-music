@@ -73,11 +73,19 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     if (code === 'unauthorized') {
       window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT));
     }
-    const message =
-      (payload && typeof payload === 'object' && 'message' in payload
-        ? String((payload as { message: unknown }).message)
+    const serverMessage =
+      (payload && typeof payload === 'object'
+        ? (() => {
+            if ('message' in payload && typeof (payload as { message?: unknown }).message !== 'undefined') {
+              return String((payload as { message: unknown }).message);
+            }
+            if ('error' in payload && typeof (payload as { error?: unknown }).error !== 'undefined') {
+              return String((payload as { error: unknown }).error);
+            }
+            return null;
+          })()
         : null) || 'Request failed.';
-    throw new ApiError(message, response.status, code);
+    throw new ApiError(serverMessage, response.status, code);
   }
 
   // The server wraps successful responses as { data: ... }.
