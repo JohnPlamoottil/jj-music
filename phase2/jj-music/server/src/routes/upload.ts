@@ -1,4 +1,4 @@
-import { uploadFile } from '../storage';import { Router } from 'express';
+import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -68,7 +68,7 @@ const uploadHandler: RequestHandler = async (req: any, res: Response, next: Next
       artworkUrl: artworkUrl,
       mimeType: audioFile.mimetype,
       fileSize: audioFile.size,
-      storageKey: await uploadFile(audioFile.path, audioFile.filename, audioFile.mimetype),
+      storageKey: audioFile.filename,
     });
 
     await song.save();
