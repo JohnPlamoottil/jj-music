@@ -210,7 +210,7 @@ router.get('/:id/stream', authMiddleware, async (req: AuthRequest, res: Response
       return res.status(404).json({ error: 'Song not found' });
     }
 
-    const filePath = path.join(config.LOCAL_UPLOAD_DIR, song.storageKey);
+    const filePath = path.join(config.LOCAL_UPLOAD_DIR, song.sourcePath);
     
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: 'Audio file not found' });
