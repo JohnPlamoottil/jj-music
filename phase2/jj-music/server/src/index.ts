@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import session from 'express-session';
+import path from 'path';
 import { config } from './config';
 import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './routes/auth';
@@ -54,16 +55,24 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
-app.use('/api/upload', uploadRoutes);
 app.use('/api/songs', songRoutes);
+app.use('/api/upload', uploadRoutes);
 app.use('/api/albums', albumRoutes);
 app.use('/api/artists', artistRoutes);
 app.use('/api/playlists', playlistRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api', statsRoutes);
 
+// Serve static files from public folder (frontend)
+app.use(express.static(path.join(__dirname, '../public')));
+
 // Error handling
 app.use(errorHandler);
+
+// SPA fallback - serve index.html for all non-API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
 
 // MongoDB connection
 async function start() {
