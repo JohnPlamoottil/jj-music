@@ -16,21 +16,23 @@ See [Build phases](#build-phases).
 
 ## Contents
 
-1. [What JJ Music does](#what-jj-music-does)
-2. [Architecture](#architecture)
-3. [Requirements](#requirements)
-4. [Installation](#installation)
-5. [Environment variables](#environment-variables)
-6. [MongoDB setup](#mongodb-setup)
-7. [Storage configuration](#storage-configuration)
-8. [Running locally](#running-locally)
-9. [Adding a test file you own](#adding-a-test-file-you-own)
-10. [Building for production](#building-for-production)
-11. [Deployment](#deployment)
-12. [Installing JJ Music on an iPhone](#installing-jj-music-on-an-iphone)
-13. [Security](#security)
-14. [Backups](#backups)
-15. [Build phases](#build-phases)
+- [JJ Music](#jj-music)
+  - [Contents](#contents)
+  - [What JJ Music does](#what-jj-music-does)
+  - [Architecture](#architecture)
+  - [Requirements](#requirements)
+  - [Installation](#installation)
+  - [Environment variables](#environment-variables)
+  - [MongoDB setup](#mongodb-setup)
+  - [Storage configuration](#storage-configuration)
+  - [Running locally](#running-locally)
+  - [Adding a test file you own](#adding-a-test-file-you-own)
+  - [Building for production](#building-for-production)
+  - [Deployment](#deployment)
+  - [Installing JJ Music on an iPhone](#installing-jj-music-on-an-iphone)
+  - [Security](#security)
+  - [Backups](#backups)
+  - [Build phases](#build-phases)
 
 ---
 
@@ -328,15 +330,15 @@ it.
 | Phase | Scope | Status |
 | --- | --- | --- |
 | 1 | Repository structure and full frontend UI | Done |
-| 2 | MongoDB models and Express API | Next |
-| 3 | Connect the frontend to the real API | |
-| 4 | Real uploads, server-side tag reading | |
-| 5 | Streaming with HTTP range requests | |
-| 6 | Playlists, favourites, albums, artists, search, queue, history end to end | |
-| 7 | Authentication and hardening | |
-| 8 | PWA service worker and Media Session polish | |
-| 9 | iPhone testing pass | |
-| 10 | Deployment configuration and documentation | |
+| 2 | MongoDB models and Express API | Done |
+| 3 | Connect the frontend to the real API | Done |
+| 4 | Real uploads, server-side tag reading | Done | 
+| 5 | Streaming with HTTP range requests | Done |
+| 6 | Playlists, favourites, albums, artists, search, queue, history end to end | Done |
+| 7 | Authentication and hardening | Done |
+| 8 | PWA service worker and Media Session polish | Next |
+| 9 | iPhone testing pass | Done |
+| 10 | Deployment configuration and documentation | Done |
 
 Phase 1 was built against the finished API contract — the same routes, query
 parameters and response shapes the server will implement — so Phase 3 is a
