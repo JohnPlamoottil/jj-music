@@ -49,7 +49,7 @@ const uploadHandler: RequestHandler = async (req: any, res: Response, next: Next
 
     const audioFile = req.files.file[0];
     const artworkFile = req.files.artwork ? req.files.artwork[0] : null;
-    const metadata = req.body.metadata ? JSON.parse(req.body.metadata) : {};
+    const metadata = req.body.metadata ? JSON.parse(req.body.metadata) : req.body;
 
     let artworkUrl = metadata.artworkUrl || null;
     if (artworkFile) {
