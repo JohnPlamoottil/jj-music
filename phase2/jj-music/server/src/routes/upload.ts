@@ -43,11 +43,11 @@ const upload = multer({
 
 const uploadHandler: RequestHandler = async (req: any, res: Response, next: NextFunction) => {
   try {
-    if (!req.files || !req.files.file || req.files.file.length === 0) {
+    if (!req.files || !req.files.audio || req.files.audio.length === 0) {
       throw new AppError(400, 'No audio file provided');
     }
 
-    const audioFile = req.files.file[0];
+    const audioFile = req.files.audio[0];
     const artworkFile = req.files.artwork ? req.files.artwork[0] : null;
     const metadata = req.body.metadata ? JSON.parse(req.body.metadata) : req.body;
 
@@ -97,6 +97,6 @@ const uploadHandler: RequestHandler = async (req: any, res: Response, next: Next
   }
 };
 
-router.post('/', authMiddleware, upload.fields([{ name: 'file' }, { name: 'artwork' }]), uploadHandler);
+router.post('/', authMiddleware, upload.fields([{ name: 'audio' }, { name: 'artwork' }]), uploadHandler);
 
 export default router;
