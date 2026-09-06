@@ -8,5 +8,8 @@
     "dev:client": "npm --prefix client run dev",
     "dev:server": "npm --prefix server run dev",
     "build": "npm --prefix client run build && npm --prefix server run build"
+  },
+  "dependencies": {
+    "music-metadata": "^11.15.0"
   }
 }

@@ -19,6 +19,10 @@ export interface ISong extends Document {
   genre?: string;
   year?: number;
   trackNumber?: number;
+  discNumber?: number;
+  albumArtist?: string;
+  composer?: string;
+  lyrics?: string;
   duration: number;
   artworkUrl?: string;
   mimeType: string;
