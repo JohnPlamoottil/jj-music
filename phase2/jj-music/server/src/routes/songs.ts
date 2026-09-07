@@ -3,9 +3,7 @@ import { Song, PlaybackHistory } from '../models';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import type { Response } from 'express';
-import fs from 'fs';
-import path from 'path';
-import { config } from '../config';
+import { getStreamUrl } from '../storage';
 
 const router = Router();
 
@@ -200,46 +198,22 @@ router.post('/:id/favorite', authMiddleware, async (req: AuthRequest, res: Respo
 });
 
 export default router;
-// Stream audio file with range support
+// Stream audio from storage
 router.get('/:id/stream', authMiddleware, async (req: AuthRequest, res: Response, next) => {
   try {
-    const song = await Song.findOne({ _id: req.params.id, userId: req.userId });
+    const song = await Song.findOne({
+      _id: req.params.id,
+      userId: req.userId,
+    });
+
     if (!song) {
       return res.status(404).json({ error: 'Song not found' });
     }
 
-    const filePath = path.join(config.LOCAL_UPLOAD_DIR, song.storageKey);
-    
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'Audio file not found' });
-    }
+    const streamUrl = await getStreamUrl(song.storageKey);
 
-    const stat = fs.statSync(filePath);
-    const fileSize = stat.size;
-    const range = req.headers.range;
-
-    if (range) {
-      const parts = range.replace(/bytes=/, '').split('-');
-      const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-
-      res.writeHead(206, {
-        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-        'Accept-Ranges': 'bytes',
-        'Content-Length': end - start + 1,
-        'Content-Type': song.mimeType || 'audio/mpeg',
-      });
-      fs.createReadStream(filePath, { start, end }).pipe(res);
-    } else {
-      res.writeHead(200, {
-        'Content-Length': fileSize,
-        'Content-Type': song.mimeType || 'audio/mpeg',
-        'Accept-Ranges': 'bytes',
-      });
-      fs.createReadStream(filePath).pipe(res);
-    }
+    return res.redirect(streamUrl);
   } catch (err: any) {
     next(err);
   }
 });
-
