@@ -6,6 +6,7 @@ import { Song } from '../models';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { config } from '../config';
+import { uploadFile } from '../storage';
 import type { Response, NextFunction } from 'express';
 import type { RequestHandler } from 'express';
 
@@ -50,6 +51,11 @@ const uploadHandler: RequestHandler = async (req: any, res: Response, next: Next
     const audioFile = req.files.audio[0];
     const artworkFile = req.files.artwork ? req.files.artwork[0] : null;
     const metadata = req.body.metadata ? JSON.parse(req.body.metadata) : req.body;
+    const storageKey = await uploadFile(
+      audioFile.path,
+      audioFile.filename,
+      audioFile.mimetype
+      );
 
     let artworkUrl = metadata.artworkUrl || null;
     if (artworkFile) {
@@ -72,7 +78,7 @@ const uploadHandler: RequestHandler = async (req: any, res: Response, next: Next
       artworkUrl: artworkUrl,
       mimeType: audioFile.mimetype,
       fileSize: audioFile.size,
-      storageKey: audioFile.filename,
+      storageKey,
     });
 
     await song.save();
