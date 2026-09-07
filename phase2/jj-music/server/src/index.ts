@@ -23,7 +23,15 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Middleware
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        mediaSrc: ["'self'", "blob:", "https:"],
+      },
+    },
+  })
+);
 app.use(cors({
   origin(origin, callback) {
     if (!origin || config.CLIENT_URLS.includes(origin)) {
