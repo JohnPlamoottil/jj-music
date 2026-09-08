@@ -40,6 +40,8 @@ export const songs = {
   update: (id: string, patch: Partial<Song>) =>
     request<Song>(`/api/songs/${id}`, { method: 'PUT', body: patch }),
   remove: (id: string) => request<void>(`/api/songs/${id}`, { method: 'DELETE' }),
+  removeAll: () =>
+  request<{ deletedCount: number }>('/api/songs', { method: 'DELETE' }),
   setFavorite: (id: string, favorite: boolean) =>
     request<Song>(`/api/songs/${id}/favorite`, { method: 'POST', body: { favorite } }),
 };
