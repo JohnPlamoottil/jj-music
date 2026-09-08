@@ -11,6 +11,8 @@ const XML_FILE = path.join(
 );
 
 const SAFE_EXTENSIONS = new Set([".mp3", ".m4a", ".wav"]);
+const API_BASE = "https://kannasmusic.online";
+const UPLOAD_ONE = process.argv.includes("--upload-one");
 
 console.log("🎵 JJ Music — Apple Music XML Migration");
 console.log("XML:", XML_FILE);
