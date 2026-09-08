@@ -3,6 +3,7 @@ import { parse as parsePlist } from "plist";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import readline from "node:readline";
 
 const XML_FILE = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
