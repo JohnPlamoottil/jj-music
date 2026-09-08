@@ -98,7 +98,9 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
           year: populatedSong.year,
           trackNumber: populatedSong.trackNumber,
           duration: populatedSong.duration,
-          artworkUrl: populatedSong.artworkUrl,
+          artworkUrl: populatedSong.artworkUrl
+            ? `/api/songs/artwork/${populatedSong._id.toString()}`
+            : null,
           mimeType: populatedSong.mimeType,
           fileSize: populatedSong.fileSize,
           favorite: populatedSong.favorite,
