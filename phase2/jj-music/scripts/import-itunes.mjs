@@ -273,6 +273,85 @@ async function loginToJJMusic() {
   return sessionCookie.split(";")[0];
 }
 
+async function uploadTrack(track, sessionCookie) {
+  const form = new FormData();
+
+  form.append(
+    "audio",
+    new Blob([fs.readFileSync(track.file)], {
+      type: track.mimeType,
+    }),
+    track.originalFilename,
+  );
+
+  if (track.artwork) {
+    const artworkType =
+      track.artwork.format === "image/png"
+        ? "image/png"
+        : track.artwork.format === "image/webp"
+          ? "image/webp"
+          : "image/jpeg";
+
+    const artworkExtension =
+      artworkType === "image/png"
+        ? ".png"
+        : artworkType === "image/webp"
+          ? ".webp"
+          : ".jpg";
+
+    form.append(
+      "artwork",
+      new Blob([track.artwork.data], {
+        type: artworkType,
+      }),
+      `cover${artworkExtension}`,
+    );
+  }
+
+  form.append(
+    "metadata",
+    JSON.stringify({
+      title: track.title,
+      artist: track.artist,
+      album: track.album,
+      genre: track.genre,
+      year: track.year,
+      trackNumber: track.trackNumber,
+      discNumber: track.discNumber,
+      albumArtist: track.albumArtist,
+      composer: track.composer,
+      duration: track.duration,
+      lyrics: track.lyrics,
+
+      playCount: track.playCount,
+      lastPlayedAt: track.lastPlayedAt,
+
+      sourceTrackId: Number(track.trackId),
+      sourcePersistentId: track.persistentId,
+      sourceDateAdded: track.dateAdded,
+
+      skipCount: track.skipCount,
+      rating: track.rating,
+      comments: track.comments,
+    }),
+  );
+
+  const response = await fetch(`${API_BASE}/api/upload`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie,
+    },
+    body: form,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Upload failed (${response.status}): ${errorText}`);
+  }
+
+  return response.json();
+}
+
 console.log("📖 Reading Apple Music XML...");
 
 const xmlTextData = fs.readFileSync(XML_FILE, "utf8");
