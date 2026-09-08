@@ -1,303 +1,312 @@
 import { parseFile } from "music-metadata";
+import { parse as parsePlist } from "plist";
 import fs from "node:fs";
 import path from "node:path";
-import readline from "node:readline";
+import { fileURLToPath } from "node:url";
 
-const MUSIC_FOLDER = "/Users/johnplamoottil/Music/iTunes/iTunes Media/Music";
-const ITUNES_LIBRARY_PATHS = [
-  "/Users/johnplamoottil/Music/iTunes/iTunes Library.xml",
-  "/Users/johnplamoottil/Music/iTunes/iTunes Library.itl",
-  "/Users/johnplamoottil/Music/iTunes/iTunes Library Extras.itdb",
-  "/Users/johnplamoottil/Music/iTunes/iTunes Library Genius.itdb",
-];
-
-const API_BASE = "https://kannasmusic.online";
-const AUDIO_EXTENSIONS = new Set([".mp3"]);
-const DRY_RUN = process.argv.includes("--dry-run");
-
-console.log("🎵 JJ Music — iTunes Importer");
-console.log("Music folder:", MUSIC_FOLDER);
-console.log("JJ Music:", API_BASE);
-
-const detectedLibraryFiles = ITUNES_LIBRARY_PATHS.filter((file) =>
-  fs.existsSync(file),
+const XML_FILE = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "Library Sept2026.xml",
 );
 
-if (detectedLibraryFiles.length === 0) {
-  console.log(
-    "iTunes metadata: no XML or library files detected in ~/Music/iTunes",
-  );
-} else {
-  console.log(
-    "iTunes metadata files detected:",
-    detectedLibraryFiles.map((file) => path.basename(file)).join(", "),
-  );
+const SAFE_EXTENSIONS = new Set([".mp3", ".m4a", ".wav"]);
 
-  if (
-    !detectedLibraryFiles.some((file) => file.toLowerCase().endsWith(".xml"))
-  ) {
-    console.log(
-      "Note: the current iTunes library file appears to be a binary .itl database, not a playlist XML export.",
-    );
-    console.log(
-      "Playlist migration still needs to inspect the actual iTunes database structure before implementation.",
-    );
-  }
+console.log("🎵 JJ Music — Apple Music XML Migration");
+console.log("XML:", XML_FILE);
+console.log("Mode: DRY RUN ONLY — nothing will be uploaded\n");
+
+if (!fs.existsSync(XML_FILE)) {
+  throw new Error(`Apple Music XML not found: ${XML_FILE}`);
 }
 
-function findAudioFiles(folder) {
-  const files = [];
+function locationToPath(location) {
+  if (!location) return null;
 
-  for (const entry of fs.readdirSync(folder, { withFileTypes: true })) {
-    const fullPath = path.join(folder, entry.name);
+  try {
+    const url = new URL(location);
 
-    if (entry.isDirectory()) {
-      files.push(...findAudioFiles(fullPath));
-    } else if (AUDIO_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) {
-      files.push(fullPath);
+    if (url.protocol !== "file:") {
+      return null;
     }
+
+    return decodeURIComponent(url.pathname);
+  } catch {
+    return null;
+  }
+}
+
+function firstValue(value) {
+  if (value == null) return null;
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value;
+}
+
+function embeddedGenre(metadata) {
+  const genre = firstValue(metadata.common.genre);
+
+  if (!genre) return null;
+
+  if (typeof genre === "object" && genre.value) {
+    return String(genre.value);
   }
 
-  return files;
+  return String(genre);
 }
 
-function getAlbumTag(tagValue) {
-  if (!tagValue) return "Uploaded Library";
-  if (Array.isArray(tagValue)) return tagValue[0] ?? "Uploaded Library";
-  return String(tagValue);
+function embeddedLyrics(metadata) {
+  const lyrics = firstValue(metadata.common.lyrics);
+
+  if (!lyrics) return null;
+
+  if (typeof lyrics === "object" && lyrics.text) {
+    return String(lyrics.text);
+  }
+
+  return String(lyrics);
 }
 
-function getGenreTag(tagValue) {
-  if (!tagValue) return "Unknown Genre";
-  if (Array.isArray(tagValue))
-    return tagValue[0]?.value ?? tagValue[0] ?? "Unknown Genre";
-  return typeof tagValue === "string"
-    ? tagValue
-    : (tagValue.value ?? "Unknown Genre");
+function xmlNumber(value) {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 }
 
-function getLyrics(metadata) {
-  const lyrics = metadata.common.lyrics;
-  if (!lyrics || lyrics.length === 0) return null;
-  return lyrics[0]?.text ?? lyrics[0] ?? null;
+function xmlText(value) {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  return String(value);
 }
 
-async function inspectAudioFile(file) {
-  const metadata = await parseFile(file);
+async function buildTrack(xmlTrack) {
+  const file = locationToPath(xmlTrack.Location);
+
+  if (!file) {
+    return { status: "missing-location", xmlTrack };
+  }
+
+  if (!fs.existsSync(file)) {
+    return { status: "missing-file", file, xmlTrack };
+  }
+
+  const extension = path.extname(file).toLowerCase();
+
+  if (!SAFE_EXTENSIONS.has(extension)) {
+    return { status: "deferred-format", file, extension, xmlTrack };
+  }
+
+  let embedded = null;
+  let parseError = null;
+
+  try {
+    embedded = await parseFile(file);
+  } catch (error) {
+    parseError = error instanceof Error ? error.message : String(error);
+  }
+
+  const fallbackTitle = path.basename(file, extension);
+
+  /*
+   * Apple Music XML is authoritative.
+   * Embedded file tags are used only when XML doesn't contain the field.
+   */
   const title =
-    metadata.common.title || path.basename(file, path.extname(file));
-  const artist = metadata.common.artist || "Unknown Artist";
-  const album = getAlbumTag(metadata.common.album);
-  const genre = getGenreTag(metadata.common.genre);
-  const trackNumber = metadata.common.track?.no ?? null;
-  const discNumber = metadata.common.disk?.no ?? null;
-  const albumArtist = metadata.common.albumartist ?? null;
-  const duration = Number(metadata.format.duration ?? 0);
-  const picture = metadata.common.picture?.[0] ?? null;
+    xmlText(xmlTrack.Name) ?? xmlText(embedded?.common?.title) ?? fallbackTitle;
+
+  const artist =
+    xmlText(xmlTrack.Artist) ??
+    xmlText(embedded?.common?.artist) ??
+    "Unknown Artist";
+
+  const album =
+    xmlText(xmlTrack.Album) ??
+    xmlText(firstValue(embedded?.common?.album)) ??
+    "Unknown Album";
+
+  const genre =
+    xmlText(xmlTrack.Genre) ?? (embedded ? embeddedGenre(embedded) : null);
+
+  const year = xmlNumber(xmlTrack.Year) ?? xmlNumber(embedded?.common?.year);
+
+  const trackNumber =
+    xmlNumber(xmlTrack["Track Number"]) ??
+    xmlNumber(embedded?.common?.track?.no);
+
+  const discNumber =
+    xmlNumber(xmlTrack["Disc Number"]) ?? xmlNumber(embedded?.common?.disk?.no);
+
+  const albumArtist =
+    xmlText(xmlTrack["Album Artist"]) ?? xmlText(embedded?.common?.albumartist);
+
+  const composer =
+    xmlText(xmlTrack.Composer) ??
+    (Array.isArray(embedded?.common?.composer)
+      ? embedded.common.composer.join(", ")
+      : xmlText(embedded?.common?.composer));
+
+  const duration =
+    xmlNumber(xmlTrack["Total Time"]) !== null
+      ? xmlNumber(xmlTrack["Total Time"]) / 1000
+      : Number(embedded?.format?.duration ?? 0);
+
+  const lyrics =
+    xmlText(xmlTrack.Lyrics) ?? (embedded ? embeddedLyrics(embedded) : null);
+
+  const picture = embedded?.common?.picture?.[0] ?? null;
 
   return {
+    status: "ready",
+    trackId: String(xmlTrack["Track ID"]),
+    persistentId: xmlText(xmlTrack["Persistent ID"]),
     file,
+    extension,
+    originalFilename: path.basename(file),
+
     title,
     artist,
     album,
     genre,
-    year: metadata.common.year ?? null,
+    year,
     trackNumber,
     discNumber,
     albumArtist,
+    composer,
     duration,
-    hasArtwork: Boolean(picture),
-    lyrics: getLyrics(metadata),
+    lyrics,
+
+    playCount: xmlNumber(xmlTrack["Play Count"]) ?? 0,
+    skipCount: xmlNumber(xmlTrack["Skip Count"]) ?? 0,
+    rating: xmlNumber(xmlTrack.Rating),
+    comments: xmlText(xmlTrack.Comments),
+    dateAdded: xmlTrack["Date Added"] ?? null,
+    lastPlayedAt: xmlTrack["Play Date UTC"] ?? null,
+
     fileSize: fs.statSync(file).size,
-    mimeType: metadata.format.mimeType ?? "audio/mpeg",
-    originalFilename: path.basename(file),
+    mimeType:
+      embedded?.format?.mimeType ??
+      (extension === ".m4a"
+        ? "audio/mp4"
+        : extension === ".wav"
+          ? "audio/wav"
+          : "audio/mpeg"),
+
+    hasArtwork: Boolean(picture),
+    artwork: picture,
+
+    parseError,
   };
 }
 
-const audioFiles = findAudioFiles(MUSIC_FOLDER);
+console.log("📖 Reading Apple Music XML...");
 
-console.log(`\nFound ${audioFiles.length} audio files.`);
+const xmlTextData = fs.readFileSync(XML_FILE, "utf8");
+const library = parsePlist(xmlTextData);
 
-if (audioFiles.length === 0) {
+const xmlTracks = Object.values(library.Tracks ?? {});
+const playlists = library.Playlists ?? [];
+
+console.log(`XML tracks: ${xmlTracks.length}`);
+console.log(`XML playlists: ${playlists.length}\n`);
+
+const results = [];
+
+for (let i = 0; i < xmlTracks.length; i += 1) {
+  const result = await buildTrack(xmlTracks[i]);
+  results.push(result);
+
+  if ((i + 1) % 100 === 0 || i + 1 === xmlTracks.length) {
+    process.stdout.write(`\rInspecting tracks: ${i + 1}/${xmlTracks.length}`);
+  }
+}
+
+console.log("\n");
+
+const ready = results.filter((item) => item.status === "ready");
+const missing = results.filter((item) => item.status === "missing-file");
+const missingLocation = results.filter(
+  (item) => item.status === "missing-location",
+);
+const deferred = results.filter((item) => item.status === "deferred-format");
+
+const artworkCount = ready.filter((item) => item.hasArtwork).length;
+const lyricsCount = ready.filter((item) => item.lyrics).length;
+const parseErrors = ready.filter((item) => item.parseError);
+
+const extensionCounts = {};
+
+for (const item of ready) {
+  extensionCounts[item.extension] = (extensionCounts[item.extension] ?? 0) + 1;
+}
+
+console.log("========================================");
+console.log("JJ MUSIC MIGRATION DRY-RUN REPORT");
+console.log("========================================");
+console.log(`Ready to migrate:       ${ready.length}`);
+console.log(`Missing local files:    ${missing.length}`);
+console.log(`Missing locations:      ${missingLocation.length}`);
+console.log(`Deferred formats:       ${deferred.length}`);
+console.log(`Embedded artwork:       ${artworkCount}`);
+console.log(`Lyrics available:       ${lyricsCount}`);
+console.log(`Metadata parse errors:  ${parseErrors.length}`);
+
+console.log("\nREADY FORMATS");
+
+for (const [extension, count] of Object.entries(extensionCounts).sort()) {
+  console.log(`${extension.padEnd(8)} ${count}`);
+}
+
+console.log("\nFIRST 15 READY TRACKS");
+console.log("----------------------------------------");
+
+for (const [index, track] of ready.slice(0, 15).entries()) {
+  console.log(`${index + 1}. ${track.title} — ${track.artist}`);
+
   console.log(
-    "No MP3 files were found under the configured iTunes Music folder.",
+    `   album=${track.album} | year=${track.year ?? "n/a"} | ` +
+      `plays=${track.playCount} | artwork=${track.hasArtwork ? "yes" : "no"} | ` +
+      `lyrics=${track.lyrics ? "yes" : "no"}`,
   );
-  process.exit(0);
 }
 
-const previewFiles = await Promise.all(
-  audioFiles.slice(0, 12).map(async (file) => inspectAudioFile(file)),
-);
+if (deferred.length > 0) {
+  const deferredCounts = {};
 
-for (const [index, item] of previewFiles.entries()) {
-  const safeIndex = index + 1;
+  for (const item of deferred) {
+    deferredCounts[item.extension] = (deferredCounts[item.extension] ?? 0) + 1;
+  }
+
+  console.log("\nDEFERRED FORMATS");
+
+  for (const [extension, count] of Object.entries(deferredCounts).sort()) {
+    console.log(`${extension.padEnd(8)} ${count}`);
+  }
+}
+
+if (parseErrors.length > 0) {
+  console.log("\nFIRST METADATA PARSE ERRORS");
+
+  for (const item of parseErrors.slice(0, 10)) {
+    console.log(`- ${item.file}`);
+    console.log(`  ${item.parseError}`);
+  }
+}
+
+console.log("\nPLAYLIST PREVIEW");
+console.log("----------------------------------------");
+
+for (const playlist of playlists.slice(0, 20)) {
   console.log(
-    `${safeIndex}. ${item.title} — ${item.artist} | album=${item.album} | year=${item.year ?? "n/a"} | artwork=${item.hasArtwork ? "yes" : "no"} | lyrics=${item.lyrics ? "yes" : "no"}`,
+    `${playlist.Name ?? "Unnamed Playlist"} — ` +
+      `${playlist["Playlist Items"]?.length ?? 0} tracks`,
   );
 }
 
-if (audioFiles.length > previewFiles.length) {
-  console.log(
-    `... and ${audioFiles.length - previewFiles.length} additional files remain to inspect.`,
-  );
-}
-
-if (DRY_RUN) {
-  console.log("\nDry-run mode: no upload or login was attempted.");
-  process.exit(0);
-}
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
-
-function ask(question) {
-  return new Promise((resolve) => rl.question(question, resolve));
-}
-
-console.log("\n🔐 JJ Music Login");
-const email = await ask("Email: ");
-const password = await new Promise((resolve) => {
-  process.stdout.write("Password: ");
-  process.stdin.setRawMode(true);
-
-  let value = "";
-
-  const onData = (char) => {
-    const key = char.toString();
-
-    if (key === "\r" || key === "\n") {
-      process.stdin.setRawMode(false);
-      process.stdin.removeListener("data", onData);
-      process.stdout.write("\n");
-      resolve(value);
-    } else if (key === "\u0003") {
-      process.stdin.setRawMode(false);
-      process.exit();
-    } else if (key === "\u007f") {
-      value = value.slice(0, -1);
-    } else {
-      value += key;
-    }
-  };
-
-  process.stdin.on("data", onData);
-});
-
-console.log(`\nLogin credentials received for: ${email}`);
-rl.close();
-
-console.log("\n🔄 Logging in...");
-
-const loginResponse = await fetch(`${API_BASE}/api/auth/login`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    email: email.trim(),
-    password,
-  }),
-});
-
-if (!loginResponse.ok) {
-  const errorText = await loginResponse.text();
-  throw new Error(`Login failed (${loginResponse.status}): ${errorText}`);
-}
-
-const sessionCookie = loginResponse.headers.get("set-cookie");
-
-if (!sessionCookie) {
-  throw new Error("Login succeeded but no session cookie was returned.");
-}
-
-console.log("✅ Logged into JJ Music successfully.");
-
-console.log("\n🧪 Preparing first MP3 for test upload...");
-
-const testFile = audioFiles[0];
-const testMetadata = await parseFile(testFile);
-const title =
-  testMetadata.common.title || path.basename(testFile, path.extname(testFile));
-const artist = testMetadata.common.artist || "Unknown Artist";
-const album = getAlbumTag(testMetadata.common.album);
-
-console.log("File:", path.basename(testFile));
-console.log("Title:", title);
-console.log("Artist:", artist);
-console.log("Album:", album);
-console.log("Duration:", Number(testMetadata.format.duration ?? 0));
-console.log("Artwork:", testMetadata.common.picture?.length ? "YES" : "NO");
-
-console.log("\n⬆️ Uploading test song to JJ Music...");
-
-const form = new FormData();
-
-form.append(
-  "audio",
-  new Blob([fs.readFileSync(testFile)], { type: "audio/mpeg" }),
-  path.basename(testFile),
-);
-
-const picture = testMetadata.common.picture?.[0];
-
-if (picture) {
-  const artworkType =
-    picture.format === "image/png"
-      ? "image/png"
-      : picture.format === "image/webp"
-        ? "image/webp"
-        : "image/jpeg";
-
-  const artworkExtension =
-    artworkType === "image/png"
-      ? ".png"
-      : artworkType === "image/webp"
-        ? ".webp"
-        : ".jpg";
-
-  form.append(
-    "artwork",
-    new Blob([picture.data], { type: artworkType }),
-    `cover${artworkExtension}`,
-  );
-}
-
-form.append(
-  "metadata",
-  JSON.stringify({
-    title,
-    artist,
-    album,
-    genre: getGenreTag(testMetadata.common.genre),
-    year: testMetadata.common.year ?? null,
-    trackNumber: testMetadata.common.track?.no ?? null,
-    discNumber: testMetadata.common.disk?.no ?? null,
-    albumArtist: testMetadata.common.albumartist ?? null,
-    composer: testMetadata.common.composer?.join?.(", ") ?? null,
-    duration: Number(testMetadata.format.duration ?? 0),
-    lyrics: getLyrics(testMetadata),
-  }),
-);
-
-const uploadResponse = await fetch(`${API_BASE}/api/upload`, {
-  method: "POST",
-  headers: {
-    Cookie: sessionCookie.split(";")[0],
-  },
-  body: form,
-});
-
-if (!uploadResponse.ok) {
-  const errorText = await uploadResponse.text();
-  throw new Error(`Upload failed (${uploadResponse.status}): ${errorText}`);
-}
-
-const uploadedSong = await uploadResponse.json();
-
-console.log(
-  `✅ Uploaded: ${uploadedSong.data.title} — ${uploadedSong.data.artist}`,
-);
-
-console.log(`🖼️ Artwork: ${uploadedSong.data.artworkUrl ? "YES" : "NO"}`);
+console.log("\n✅ Dry run complete.");
+console.log("No login occurred.");
+console.log("No MongoDB records were created.");
+console.log("No S3 files were uploaded.");
+console.log("No playlists were changed.");
