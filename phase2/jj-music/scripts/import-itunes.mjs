@@ -475,14 +475,54 @@ for (const playlist of playlists.slice(0, 20)) {
       `${playlist["Playlist Items"]?.length ?? 0} tracks`,
   );
 }
-
-console.log("\n✅ Dry run complete.");
-if (UPLOAD_ONE) {
-  console.log("\n🧪 One-song upload mode selected.");
+if (!UPLOAD_ONE) {
+  console.log("\n✅ Dry run complete.");
+  console.log("No login occurred.");
+  console.log("No MongoDB records were created.");
+  console.log("No S3 files were uploaded.");
+  console.log("No playlists were changed.");
 } else {
-  console.log("\n🔒 Dry-run only. No upload mode was selected.");
+  console.log("\n🧪 ONE-SONG PRODUCTION TEST");
+
+  const testTrack = ready[0];
+
+  if (!testTrack) {
+    throw new Error("No migration-ready tracks were found.");
+  }
+
+  const checkpoint = loadCheckpoint();
+
+  if (checkpoint.tracks[testTrack.trackId]) {
+    console.log(
+      `⏭️ Track ${testTrack.trackId} was already uploaded. Skipping.`,
+    );
+  } else {
+    console.log(`Selected: ${testTrack.title} — ${testTrack.artist}`);
+    console.log(`File: ${testTrack.originalFilename}`);
+    console.log(`Artwork: ${testTrack.hasArtwork ? "YES" : "NO"}`);
+    console.log("\nOnly this ONE song will be uploaded.");
+
+    const sessionCookie = await loginToJJMusic();
+
+    console.log("\n⬆️ Uploading one test song...");
+
+    const uploadedSong = await uploadTrack(testTrack, sessionCookie);
+    const song = uploadedSong.data;
+
+    checkpoint.tracks[testTrack.trackId] = {
+      songId: song.id,
+      persistentId: testTrack.persistentId,
+      title: testTrack.title,
+      artist: testTrack.artist,
+      uploadedAt: new Date().toISOString(),
+    };
+
+    saveCheckpoint(checkpoint);
+
+    console.log(`\n✅ Uploaded: ${song.title} — ${song.artist}`);
+    console.log(`JJ Music Song ID: ${song.id}`);
+    console.log(`🖼️ Artwork: ${song.artworkUrl ? "YES" : "NO"}`);
+    console.log("💾 Migration checkpoint saved.");
+    console.log("\n🛑 One-song test complete. Bulk migration NOT started.");
+  }
 }
-console.log("No login occurred.");
-console.log("No MongoDB records were created.");
-console.log("No S3 files were uploaded.");
-console.log("No playlists were changed.");
