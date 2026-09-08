@@ -19,6 +19,10 @@ const MIME_TYPES = {
   ".wav": "audio/wav",
 };
 
+function ask(rl, question) {
+  return new Promise((resolve) => rl.question(question, resolve));
+}
+
 console.log("🎵 JJ Music — Apple Music XML Migration");
 console.log("XML:", XML_FILE);
 console.log("Mode: DRY RUN ONLY — nothing will be uploaded\n");
