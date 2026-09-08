@@ -182,7 +182,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           history
             .record(song.id)
             .then((entry) => {
-              if (entry?.song) emit('song-updated', entry.song);
+              if (entry?.song) {
+                setState((current) => ({
+                  ...current,
+                  queue: current.queue.map((queuedSong) =>
+                    queuedSong.id === song.id
+                      ? {
+                        ...queuedSong,
+                        playCount: entry.song!.playCount,
+                        lastPlayedAt: entry.song!.lastPlayedAt,
+                        }
+                      : queuedSong,
+                  ),
+                }));
+              }
             })
             .catch(() => undefined);
         }
