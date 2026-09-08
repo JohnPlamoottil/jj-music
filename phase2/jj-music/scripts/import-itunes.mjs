@@ -10,6 +10,11 @@ const XML_FILE = path.join(
   "Library Sept2026.xml",
 );
 
+const CHECKPOINT_FILE = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  ".itunes-migration-checkpoint.json",
+);
+
 const SAFE_EXTENSIONS = new Set([".mp3", ".m4a", ".wav"]);
 const API_BASE = "https://kannasmusic.online";
 const UPLOAD_ONE = process.argv.includes("--upload-one");
