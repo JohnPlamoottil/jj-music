@@ -39,7 +39,10 @@ export async function uploadFile(filePath: string, fileName: string, mimeType: s
 
   const fileContent = fs.readFileSync(filePath);
   const cleanFileName = cleanSongFileName(fileName);
-  const s3Key = `songs/${cleanFileName}`;
+  const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const ext = path.extname(cleanFileName);
+  const base = path.basename(cleanFileName, ext);
+  const s3Key = `songs/${base}-${uniqueSuffix}${ext}`;
 
   await s3Client.send(
     new PutObjectCommand({
