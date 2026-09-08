@@ -85,6 +85,14 @@ if (artworkFile) {
       artworkUrl: artworkUrl,
       mimeType: audioFile.mimetype,
       fileSize: audioFile.size,
+      playCount: metadata.playCount ?? 0,
+      lastPlayedAt: metadata.lastPlayedAt || undefined,
+      sourceTrackId: metadata.sourceTrackId,
+      sourcePersistentId: metadata.sourcePersistentId,
+      sourceDateAdded: metadata.sourceDateAdded || undefined,
+      skipCount: metadata.skipCount ?? 0,
+      rating: metadata.rating,
+      comments: metadata.comments,
       storageKey,
     });
 
