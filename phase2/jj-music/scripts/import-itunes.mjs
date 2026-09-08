@@ -207,6 +207,72 @@ async function buildTrack(xmlTrack) {
   };
 }
 
+async function loginToJJMusic() {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  console.log("\n🔐 JJ Music Login");
+
+  const email = await ask(rl, "Email: ");
+
+  const password = await new Promise((resolve) => {
+    process.stdout.write("Password: ");
+    process.stdin.setRawMode(true);
+
+    let value = "";
+
+    const onData = (char) => {
+      const key = char.toString();
+
+      if (key === "\r" || key === "\n") {
+        process.stdin.setRawMode(false);
+        process.stdin.removeListener("data", onData);
+        process.stdout.write("\n");
+        resolve(value);
+      } else if (key === "\u0003") {
+        process.stdin.setRawMode(false);
+        process.exit();
+      } else if (key === "\u007f") {
+        value = value.slice(0, -1);
+      } else {
+        value += key;
+      }
+    };
+
+    process.stdin.on("data", onData);
+  });
+
+  rl.close();
+
+  const response = await fetch(`${API_BASE}/api/auth/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email: email.trim(),
+      password,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Login failed (${response.status}): ${errorText}`);
+  }
+
+  const sessionCookie = response.headers.get("set-cookie");
+
+  if (!sessionCookie) {
+    throw new Error("Login succeeded but no session cookie was returned.");
+  }
+
+  console.log("✅ Logged into JJ Music successfully.");
+
+  return sessionCookie.split(";")[0];
+}
+
 console.log("📖 Reading Apple Music XML...");
 
 const xmlTextData = fs.readFileSync(XML_FILE, "utf8");
