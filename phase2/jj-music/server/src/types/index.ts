@@ -31,6 +31,12 @@ export interface ISong extends Document {
   playCount: number;
   uploadedAt: Date;
   lastPlayedAt?: Date;
+  sourceTrackId?: number;
+  sourcePersistentId?: string;
+  sourceDateAdded?: Date;
+  skipCount?: number;
+  rating?: number;
+  comments?: string;
   storageKey: string;
   createdAt: Date;
   updatedAt: Date;
