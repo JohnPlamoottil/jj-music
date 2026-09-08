@@ -113,8 +113,26 @@ if (artworkFile) {
         lastPlayedAt: song.lastPlayedAt?.toISOString() || null,
       },
     });
-  } catch (err: any) {
+    } catch (err: any) {
     next(err);
+  } finally {
+    const audioFile = req.files?.audio?.[0];
+    const artworkFile = req.files?.artwork?.[0];
+
+    for (const file of [audioFile, artworkFile]) {
+      if (file?.path) {
+        try {
+          await fs.promises.unlink(file.path);
+        } catch (cleanupError: any) {
+          if (cleanupError?.code !== 'ENOENT') {
+            console.error(
+              `Failed to delete temporary upload file ${file.path}:`,
+              cleanupError
+            );
+          }
+        }
+      }
+    }
   }
 };
 
