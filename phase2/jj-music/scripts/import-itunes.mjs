@@ -476,7 +476,7 @@ for (const playlist of playlists.slice(0, 20)) {
       `${playlist["Playlist Items"]?.length ?? 0} tracks`,
   );
 }
-if (!UPLOAD_ONE) {
+if (!UPLOAD_ONE && !UPLOAD_ALL) {
   console.log("\n✅ Dry run complete.");
   console.log("No login occurred.");
   console.log("No MongoDB records were created.");
