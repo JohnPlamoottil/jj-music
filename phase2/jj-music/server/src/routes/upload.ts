@@ -53,9 +53,9 @@ const uploadHandler: RequestHandler = async (req: any, res: Response, next: Next
     const metadata = req.body.metadata ? JSON.parse(req.body.metadata) : req.body;
     const storageKey = await uploadFile(
       audioFile.path,
-      audioFile.filename,
+      audioFile.originalname,
       audioFile.mimetype
-      );
+    );
 
     let artworkUrl = metadata.artworkUrl || null;
 
