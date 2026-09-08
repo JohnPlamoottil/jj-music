@@ -194,13 +194,7 @@ async function buildTrack(xmlTrack) {
     lastPlayedAt: xmlTrack["Play Date UTC"] ?? null,
 
     fileSize: fs.statSync(file).size,
-    mimeType:
-      embedded?.format?.mimeType ??
-      (extension === ".m4a"
-        ? "audio/mp4"
-        : extension === ".wav"
-          ? "audio/wav"
-          : "audio/mpeg"),
+    mimeType: MIME_TYPES[extension],
 
     hasArtwork: Boolean(picture),
     artwork: picture,
