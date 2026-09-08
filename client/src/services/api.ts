@@ -93,7 +93,6 @@ export const library = {
  */
 export function streamUrl(song: Song): string {
   if (USE_MOCK_API) {
-    if (song.sourcePath) return `/@fs${encodeURI(song.sourcePath)}`;
     return mockAudioUrl(song.id) ?? demoToneUrl(song.id, song.duration);
   }
   return buildPath(`/api/songs/${song.id}/stream`);
