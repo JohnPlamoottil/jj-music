@@ -169,6 +169,19 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: 'Failed to update song' });
   }
 });
+router.delete('/', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const result = await Song.deleteMany({ userId: req.userId });
+
+    res.json({
+      data: {
+        deletedCount: result.deletedCount,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to delete all songs' });
+  }
+});
 
 router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
