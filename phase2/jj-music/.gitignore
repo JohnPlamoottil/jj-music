@@ -33,3 +33,9 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# Local iTunes migration files
+scripts/Library Sept2026.xml
+scripts/import-itunes.backup.mjs
+scripts/import-itunes.xml-dryrun.backup.mjs
+scripts/.itunes-migration-checkpoint.json
