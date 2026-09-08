@@ -38,7 +38,9 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
               year: song.year,
               trackNumber: song.trackNumber,
               duration: song.duration,
-              artworkUrl: song.artworkUrl,
+              artworkUrl: song.artworkUrl
+                ? `/api/songs/artwork/${song._id.toString()}`
+                : null,
               mimeType: song.mimeType,
               fileSize: song.fileSize,
               favorite: song.favorite,
