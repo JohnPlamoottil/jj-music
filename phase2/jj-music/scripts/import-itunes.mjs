@@ -314,6 +314,11 @@ for (const playlist of playlists.slice(0, 20)) {
 }
 
 console.log("\n✅ Dry run complete.");
+if (UPLOAD_ONE) {
+  console.log("\n🧪 One-song upload mode selected.");
+} else {
+  console.log("\n🔒 Dry-run only. No upload mode was selected.");
+}
 console.log("No login occurred.");
 console.log("No MongoDB records were created.");
 console.log("No S3 files were uploaded.");
