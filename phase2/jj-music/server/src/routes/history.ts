@@ -24,7 +24,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 
     res.json({
       data: {
-        items: entries.map(entry => {
+        items: entries.filter(entry => entry.songId).map(entry => {
           const song = entry.songId as unknown as ISong;
           return {
             id: entry._id.toString(),
