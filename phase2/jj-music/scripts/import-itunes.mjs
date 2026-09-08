@@ -18,6 +18,7 @@ const CHECKPOINT_FILE = path.join(
 const SAFE_EXTENSIONS = new Set([".mp3", ".m4a", ".wav"]);
 const API_BASE = "https://kannasmusic.online";
 const UPLOAD_ONE = process.argv.includes("--upload-one");
+const UPLOAD_ALL = process.argv.includes("--upload");
 const MIME_TYPES = {
   ".mp3": "audio/mpeg",
   ".m4a": "audio/mp4",
