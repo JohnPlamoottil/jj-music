@@ -65,7 +65,13 @@ app.use(session({
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
+
+  // Bulk music imports use the authenticated upload route.
+  // Uploads are excluded from the general API limiter so large
+  // library migrations do not hit the 100 requests / 15 min limit.
+  skip: (req) => req.path === '/upload' || req.path.startsWith('/upload/'),
 });
+
 app.use('/api/', limiter);
 
 // API Routes
