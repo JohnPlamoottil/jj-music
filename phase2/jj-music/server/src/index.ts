@@ -28,7 +28,8 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         mediaSrc: ["'self'", "blob:", "https:"],
-      },
+        imgSrc: ["'self'", "data:", "blob:", "https:"],
+},
     },
   })
 );
