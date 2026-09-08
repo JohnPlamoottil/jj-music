@@ -24,14 +24,18 @@ const detectedLibraryFiles = ITUNES_LIBRARY_PATHS.filter((file) =>
 );
 
 if (detectedLibraryFiles.length === 0) {
-  console.log("iTunes metadata: no XML or library files detected in ~/Music/iTunes");
+  console.log(
+    "iTunes metadata: no XML or library files detected in ~/Music/iTunes",
+  );
 } else {
   console.log(
     "iTunes metadata files detected:",
     detectedLibraryFiles.map((file) => path.basename(file)).join(", "),
   );
 
-  if (!detectedLibraryFiles.some((file) => file.toLowerCase().endsWith(".xml"))) {
+  if (
+    !detectedLibraryFiles.some((file) => file.toLowerCase().endsWith(".xml"))
+  ) {
     console.log(
       "Note: the current iTunes library file appears to be a binary .itl database, not a playlist XML export.",
     );
@@ -65,8 +69,11 @@ function getAlbumTag(tagValue) {
 
 function getGenreTag(tagValue) {
   if (!tagValue) return "Unknown Genre";
-  if (Array.isArray(tagValue)) return tagValue[0]?.value ?? tagValue[0] ?? "Unknown Genre";
-  return typeof tagValue === "string" ? tagValue : tagValue.value ?? "Unknown Genre";
+  if (Array.isArray(tagValue))
+    return tagValue[0]?.value ?? tagValue[0] ?? "Unknown Genre";
+  return typeof tagValue === "string"
+    ? tagValue
+    : (tagValue.value ?? "Unknown Genre");
 }
 
 function getLyrics(metadata) {
@@ -77,7 +84,8 @@ function getLyrics(metadata) {
 
 async function inspectAudioFile(file) {
   const metadata = await parseFile(file);
-  const title = metadata.common.title || path.basename(file, path.extname(file));
+  const title =
+    metadata.common.title || path.basename(file, path.extname(file));
   const artist = metadata.common.artist || "Unknown Artist";
   const album = getAlbumTag(metadata.common.album);
   const genre = getGenreTag(metadata.common.genre);
@@ -111,7 +119,9 @@ const audioFiles = findAudioFiles(MUSIC_FOLDER);
 console.log(`\nFound ${audioFiles.length} audio files.`);
 
 if (audioFiles.length === 0) {
-  console.log("No MP3 files were found under the configured iTunes Music folder.");
+  console.log(
+    "No MP3 files were found under the configured iTunes Music folder.",
+  );
   process.exit(0);
 }
 
@@ -127,7 +137,9 @@ for (const [index, item] of previewFiles.entries()) {
 }
 
 if (audioFiles.length > previewFiles.length) {
-  console.log(`... and ${audioFiles.length - previewFiles.length} additional files remain to inspect.`);
+  console.log(
+    `... and ${audioFiles.length - previewFiles.length} additional files remain to inspect.`,
+  );
 }
 
 if (DRY_RUN) {
