@@ -527,3 +527,73 @@ if (!UPLOAD_ONE && !UPLOAD_ALL) {
     console.log("\n🛑 One-song test complete. Bulk migration NOT started.");
   }
 }
+
+if (UPLOAD_ALL) {
+  console.log("\n🚀 FULL MIGRATION MODE");
+
+  const checkpoint = loadCheckpoint();
+  const pendingTracks = ready.filter(
+    (track) => !checkpoint.tracks[track.trackId],
+  );
+
+  console.log(`Migration-ready tracks: ${ready.length}`);
+  console.log(`Already checkpointed: ${ready.length - pendingTracks.length}`);
+  console.log(`Remaining to upload: ${pendingTracks.length}`);
+
+  if (pendingTracks.length === 0) {
+    console.log("\n✅ Nothing to upload. Migration is already complete.");
+  } else {
+    console.log(
+      "\nEach successful song will be checkpointed before continuing.",
+    );
+
+    const sessionCookie = await loginToJJMusic();
+
+    let succeeded = 0;
+    let failed = 0;
+
+    for (let index = 0; index < pendingTracks.length; index += 1) {
+      const track = pendingTracks[index];
+
+      console.log(
+        `\n[${index + 1}/${pendingTracks.length}] ` +
+          `${track.title} — ${track.artist}`,
+      );
+
+      try {
+        const uploadedSong = await uploadTrack(track, sessionCookie);
+        const song = uploadedSong.data;
+
+        checkpoint.tracks[track.trackId] = {
+          songId: song.id,
+          persistentId: track.persistentId,
+          title: track.title,
+          artist: track.artist,
+          uploadedAt: new Date().toISOString(),
+        };
+
+        saveCheckpoint(checkpoint);
+        succeeded += 1;
+
+        console.log(`✅ Uploaded — ${song.id}`);
+        console.log("💾 Checkpoint saved.");
+      } catch (error) {
+        failed += 1;
+
+        console.error(`❌ Failed: ${track.title} — ${track.artist}`);
+        console.error(error instanceof Error ? error.message : String(error));
+
+        console.log("Continuing to next song...");
+      }
+    }
+
+    console.log("\n========================================");
+    console.log("🎵 MIGRATION RUN FINISHED");
+    console.log(`✅ Uploaded this run: ${succeeded}`);
+    console.log(`❌ Failed this run: ${failed}`);
+    console.log(
+      `💾 Total checkpointed: ${Object.keys(checkpoint.tracks).length}`,
+    );
+    console.log("========================================");
+  }
+}
