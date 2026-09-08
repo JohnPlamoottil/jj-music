@@ -27,6 +27,21 @@ const MIME_TYPES = {
 function ask(rl, question) {
   return new Promise((resolve) => rl.question(question, resolve));
 }
+function loadCheckpoint() {
+  if (!fs.existsSync(CHECKPOINT_FILE)) {
+    return { tracks: {} };
+  }
+
+  return JSON.parse(fs.readFileSync(CHECKPOINT_FILE, "utf8"));
+}
+
+function saveCheckpoint(checkpoint) {
+  const tempFile = `${CHECKPOINT_FILE}.tmp`;
+
+  fs.writeFileSync(tempFile, JSON.stringify(checkpoint, null, 2), "utf8");
+
+  fs.renameSync(tempFile, CHECKPOINT_FILE);
+}
 
 console.log("🎵 JJ Music — Apple Music XML Migration");
 console.log("XML:", XML_FILE);
