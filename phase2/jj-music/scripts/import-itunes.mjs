@@ -7,7 +7,7 @@ const MUSIC_FOLDER = "/Users/johnplamoottil/Music/iTunes/iTunes Media/Music";
 
 const API_BASE = "https://kannasmusic.online";
 
-const AUDIO_EXTENSIONS = new Set([".mp3", ".m4a", ".aac", ".wav"]);
+const AUDIO_EXTENSIONS = new Set([".mp3"]);
 
 console.log("🎵 JJ Music — iTunes Importer");
 console.log("Music folder:", MUSIC_FOLDER);

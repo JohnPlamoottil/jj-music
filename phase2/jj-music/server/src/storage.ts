@@ -41,7 +41,29 @@ export async function uploadFile(filePath: string, fileName: string, mimeType: s
 
   return s3Key;
 }
+export async function uploadArtwork(
+  filePath: string,
+  fileName: string,
+  mimeType: string
+): Promise<string> {
+  if (!isS3Enabled || !s3Client) {
+    return fileName;
+  }
 
+  const fileContent = fs.readFileSync(filePath);
+  const s3Key = `artwork/${fileName}`;
+
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: process.env.AWS_S3_BUCKET || '',
+      Key: s3Key,
+      Body: fileContent,
+      ContentType: mimeType,
+    })
+  );
+
+  return s3Key;
+}
 export async function getStreamUrl(storageKey: string): Promise<string> {
   if (!isS3Enabled || !s3Client) {
     return storageKey;

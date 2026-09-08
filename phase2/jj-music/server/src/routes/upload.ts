@@ -6,7 +6,7 @@ import { Song } from '../models';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { config } from '../config';
-import { uploadFile } from '../storage';
+import { uploadFile, uploadArtwork } from '../storage';
 import type { Response, NextFunction } from 'express';
 import type { RequestHandler } from 'express';
 
@@ -58,9 +58,16 @@ const uploadHandler: RequestHandler = async (req: any, res: Response, next: Next
       );
 
     let artworkUrl = metadata.artworkUrl || null;
-    if (artworkFile) {
-      artworkUrl = `/api/songs/artwork/${artworkFile.filename}`;
-    }
+
+if (artworkFile) {
+  const artworkKey = await uploadArtwork(
+    artworkFile.path,
+    artworkFile.filename,
+    artworkFile.mimetype
+  );
+
+  artworkUrl = artworkKey;
+}
 
     const song = new Song({
       userId: (req as AuthRequest).userId,

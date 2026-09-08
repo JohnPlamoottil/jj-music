@@ -7,6 +7,25 @@ import { getStreamUrl } from '../storage';
 
 const router = Router();
 
+router.get('/artwork/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const song = await Song.findOne({
+      _id: req.params.id,
+      userId: req.userId,
+    });
+
+    if (!song || !song.artworkUrl) {
+      return res.status(404).json({ error: 'Artwork not found' });
+    }
+
+    const artworkUrl = await getStreamUrl(song.artworkUrl);
+
+    return res.redirect(artworkUrl);
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Failed to load artwork' });
+  }
+});
+
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { q, sort = 'title', page = '1', limit = '50' } = req.query;
@@ -51,7 +70,9 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
           year: song.year,
           trackNumber: song.trackNumber,
           duration: song.duration,
-          artworkUrl: song.artworkUrl,
+          artworkUrl: song.artworkUrl
+            ? `/api/songs/artwork/${song._id.toString()}`
+            : null,
           mimeType: song.mimeType,
           fileSize: song.fileSize,
           favorite: song.favorite,
@@ -86,7 +107,9 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
         year: song.year,
         trackNumber: song.trackNumber,
         duration: song.duration,
-        artworkUrl: song.artworkUrl,
+        artworkUrl: song.artworkUrl
+          ? `/api/songs/artwork/${song._id.toString()}`
+          : null,
         mimeType: song.mimeType,
         fileSize: song.fileSize,
         favorite: song.favorite,
@@ -130,7 +153,9 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
         year: song.year,
         trackNumber: song.trackNumber,
         duration: song.duration,
-        artworkUrl: song.artworkUrl,
+        artworkUrl: song.artworkUrl
+          ? `/api/songs/artwork/${song._id.toString()}`
+          : null,
         mimeType: song.mimeType,
         fileSize: song.fileSize,
         favorite: song.favorite,
@@ -182,7 +207,9 @@ router.post('/:id/favorite', authMiddleware, async (req: AuthRequest, res: Respo
         year: song.year,
         trackNumber: song.trackNumber,
         duration: song.duration,
-        artworkUrl: song.artworkUrl,
+        artworkUrl: song.artworkUrl
+          ? `/api/songs/artwork/${song._id.toString()}`
+          : null,
         mimeType: song.mimeType,
         fileSize: song.fileSize,
         favorite: song.favorite,
