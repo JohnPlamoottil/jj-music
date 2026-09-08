@@ -22,6 +22,12 @@ const songSchema = new Schema<ISong>(
     playCount: { type: Number, default: 0 },
     uploadedAt: { type: Date, default: () => new Date() },
     lastPlayedAt: Date,
+    sourceTrackId: Number,
+    sourcePersistentId: { type: String, index: true },
+    sourceDateAdded: Date,
+    skipCount: { type: Number, default: 0 },
+    rating: Number,
+    comments: String,
     storageKey: { type: String, required: true, unique: true },
   },
   { timestamps: true }
