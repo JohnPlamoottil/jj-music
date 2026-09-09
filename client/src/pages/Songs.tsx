@@ -39,7 +39,7 @@ export function Songs() {
         {
           search: debounced || undefined,
           sort,
-          limit: 500,
+          limit: 2000,
         },
         signal,
       ),
