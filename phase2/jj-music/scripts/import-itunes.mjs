@@ -482,9 +482,8 @@ if (!UPLOAD_ONE && !UPLOAD_ALL) {
   console.log("No MongoDB records were created.");
   console.log("No S3 files were uploaded.");
   console.log("No playlists were changed.");
-} else {
+} else if (UPLOAD_ONE) {
   console.log("\n🧪 ONE-SONG PRODUCTION TEST");
-
   const testTrack = ready[0];
 
   if (!testTrack) {
